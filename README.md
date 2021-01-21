@@ -1,16 +1,13 @@
-# flamerc05
+# flame rc05
 
-A new Flutter application.
+https://drive.google.com/file/d/1ZEcz_F79l9p0uEWz4I60DOIhSlbaM6St/view?usp=sharing
 
-## Getting Started
+for a basic start with rc05
 
-This project is a starting point for a Flutter application.
+-spritesheet animation
 
-A few resources to get you started if this is your first Flutter project:
+-moving components(left right.. up down)
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+-rotating components
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+-collision detection
