@@ -5,83 +5,96 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
 void main() {
+  MyRealGame daGame = MyRealGame();
   runApp(
     GameWidget(
-      game: MyRealGame(),
+      game: daGame,
     ),
   );
 }
 
+enum Direction {up, down, left, right}
+enum Typez {rotate, updown, leftright}
+
 class Fly extends SpriteComponent with HasGameRef<MyRealGame> {
-  String tag,direction;
-
-
+  Typez tag;//to keep the ref of which object of FLY class is being checked at runtime
+  Direction dir;
 
   @override
   void render(Canvas c) { super.render(c); }
 
+
   @override
   void update(double t) {
     super.update(t);
-    if(tag=='rotate') { angle+=0.01;   }
-    else if(tag=='up_down') {
-      if(y<=100 && direction == 'up'){direction='down';}
-      else if(y>=500 && direction=='down'){direction='up';}
-      if(direction=='down'){y+=1.5;}
-      else if(direction=='up'){y-=1.5;}
-    }
-    else if(tag=='left_right') {
-      if(x<=100 && direction == 'left'){direction='right';}
-      else if(x>=300 && direction=='right'){direction='left';}
-      if(direction=='right'){x++;}
-      else if(direction=='left'){x--;}
-    }
 
-
+    switch(tag) {
+      case Typez.rotate: {  angle+=0.01; }
+      break;
+      case Typez.updown: {  update_updownPosition();}
+      break;
+      case Typez.leftright: {  update_leftrightPosition(); }
+      break;
+    }
 
   }
 
-  @override
+  @override //called when Component is just delivered onto the canvas
   void onMount() async {
     super.onMount();
     print('Mount...');
     size = Vector2.all(50);
     anchor = Anchor.center;
-    if(tag=='rotate') {
-      x = 100; y = 100;
-    }
-    else if(tag=='up_down') {
-      x = 200; y = 100;
-      direction = 'up';
-    }
-    else if(tag=='left_right') {
-      x = 200; y = 300;
-      direction = 'left';
+    switch(tag) {
+      case Typez.rotate: {  x = 100; y = 100; }
+      break;
+      case Typez.updown: {  x = 200; y = 100; dir = Direction.up;}
+      break;
+      case Typez.leftright: {  x = 200; y = 300; dir = Direction.left; }
+      break;
     }
   }
+
+  void update_updownPosition() {
+    if(y<=100 && dir == Direction.up){dir= Direction.down;}
+    else if(y>=500 && dir==Direction.down){dir = Direction.up;}
+    if(dir==Direction.down){y+=1.5;}
+    else if(dir == Direction.up){y-=1.5;}
+  }
+
+  void update_leftrightPosition() {
+    if(x<=100 && dir == Direction.left){dir = Direction.right;}
+    else if(x>=300 && dir == Direction.right){dir = Direction.left;}
+    if(dir == Direction.right){x++;}
+    else if(dir == Direction.left){x--;}
+  }
+
 }
+
 
 class MyRealGame extends BaseGame{
   Sprite theSprite;
-  Fly updownFly = Fly();
-  Fly leftrightFly = Fly();
-  SpriteAnimationComponent aniCom1;
+  Fly updownFly = Fly();//will need a variable since we are checking stuff at run time
+  Fly leftrightFly = Fly();//same as above
+  SpriteAnimationComponent aniCom1;//needed to be called from outside onLoad(), hence cant be local
 
   Future<void> onLoad() async {
     print('LOAD....');
     theSprite = await loadSprite('fly.png');
-    add(Fly()
+
+    add(Fly()//since we arent interacting with this object, kept it annonymous
       ..sprite=theSprite
-      ..tag='rotate');
+      ..tag=Typez.rotate);
 
     add(updownFly
       ..sprite=theSprite
-      ..tag='up_down');
+      ..tag=Typez.updown);
 
     add(leftrightFly
       ..sprite=theSprite
-      ..tag='left_right');
-    
+      ..tag=Typez.leftright);
+
+    //this is customised way to construct your frames... but easier is to use SpriteAnimationData.sequenced constructor
     var spriteSheet =  await images.load('spritesheet.png');      
     final spriteSize = Vector2(32.0, 72.0);
     List<SpriteAnimationFrameData> frames = List(8);
@@ -92,13 +105,15 @@ class MyRealGame extends BaseGame{
     frames[4] = SpriteAnimationFrameData(srcPosition: Vector2(64,0), srcSize: Vector2(16,36), stepTime: 0.2);
     frames[5] = SpriteAnimationFrameData(srcPosition: Vector2(80,0), srcSize: Vector2(16,36), stepTime: 0.2);
     frames[6] = SpriteAnimationFrameData(srcPosition: Vector2(96,0), srcSize: Vector2(16,36), stepTime: 0.2);
-    frames[7] = SpriteAnimationFrameData(srcPosition: Vector2(128,0), srcSize: Vector2(16,36), stepTime: 0.2);
+    frames[7] = SpriteAnimationFrameData(srcPosition: Vector2(112,0), srcSize: Vector2(16,36), stepTime: 0.2);
     SpriteAnimationData data = SpriteAnimationData(frames);
     final aniCom = SpriteAnimationComponent.fromFrameData(spriteSize,spriteSheet,data)
       ..x = 100
       ..y = 450;
     add(aniCom);
+    //==================================
 
+    //example of getting co ordinates in a non linear spritesheet
     var explode =  await images.load('explode.png');
     final spriteSize1 = Vector2(100, 100);
     List<SpriteAnimationFrameData> frames1 = List(16);
@@ -109,29 +124,35 @@ class MyRealGame extends BaseGame{
         z++;
       }
     }
-
-    /*frames1[0] = SpriteAnimationFrameData(srcPosition: Vector2(0,0), srcSize: Vector2(64,64), stepTime: 0.2);
-    frames1[1] = SpriteAnimationFrameData(srcPosition: Vector2(64,0), srcSize: Vector2(64,64), stepTime: 0.2);
-    frames1[2] = SpriteAnimationFrameData(srcPosition: Vector2(128,0), srcSize: Vector2(64,64), stepTime: 0.2);
-    frames1[3] = SpriteAnimationFrameData(srcPosition: Vector2(192,0), srcSize: Vector2(64,64), stepTime: 0.2);
-
-    frames1[4] = SpriteAnimationFrameData(srcPosition: Vector2(0,64), srcSize: Vector2(64,64), stepTime: 0.2);
-    frames1[5] = SpriteAnimationFrameData(srcPosition: Vector2(64,64), srcSize: Vector2(64,64), stepTime: 0.2);
-    frames1[6] = SpriteAnimationFrameData(srcPosition: Vector2(128,64), srcSize: Vector2(64,64), stepTime: 0.2);
-    frames1[7] = SpriteAnimationFrameData(srcPosition: Vector2(192,64), srcSize: Vector2(64,64), stepTime: 0.2);
-
-    frames1[8] = SpriteAnimationFrameData(srcPosition: Vector2(0,128), srcSize: Vector2(64,64), stepTime: 0.2);
-    frames1[9] = SpriteAnimationFrameData(srcPosition: Vector2(64,128), srcSize: Vector2(64,64), stepTime: 0.2);
-    frames1[10] = SpriteAnimationFrameData(srcPosition: Vector2(128,128), srcSize: Vector2(64,64), stepTime: 0.2);
-    frames1[11] = SpriteAnimationFrameData(srcPosition: Vector2(192,128), srcSize: Vector2(64,64), stepTime: 0.2);
-
-    frames1[12] = SpriteAnimationFrameData(srcPosition: Vector2(0,192), srcSize: Vector2(64,64), stepTime: 0.2);
-    frames1[13] = SpriteAnimationFrameData(srcPosition: Vector2(64,192), srcSize: Vector2(64,64), stepTime: 0.2);
-    frames1[14] = SpriteAnimationFrameData(srcPosition: Vector2(128,192), srcSize: Vector2(64,64), stepTime: 0.2);
-    frames1[15] = SpriteAnimationFrameData(srcPosition: Vector2(192,192), srcSize: Vector2(64,64), stepTime: 0.2);
-*/
+    /*frames1 = [
+          SpriteAnimationFrameData(srcPosition: Vector2(0,0), srcSize: Vector2(64,64), stepTime: 0.2),
+          SpriteAnimationFrameData(srcPosition: Vector2(64,0), srcSize: Vector2(64,64), stepTime: 0.2),
+          SpriteAnimationFrameData(srcPosition: Vector2(128,0), srcSize: Vector2(64,64), stepTime: 0.2),
+          SpriteAnimationFrameData(srcPosition: Vector2(192,0), srcSize: Vector2(64,64), stepTime: 0.2),
+          SpriteAnimationFrameData(srcPosition: Vector2(0,64), srcSize: Vector2(64,64), stepTime: 0.2),
+          SpriteAnimationFrameData(srcPosition: Vector2(64,64), srcSize: Vector2(64,64), stepTime: 0.2),
+          SpriteAnimationFrameData(srcPosition: Vector2(128,64), srcSize: Vector2(64,64), stepTime: 0.2),
+          SpriteAnimationFrameData(srcPosition: Vector2(192,64), srcSize: Vector2(64,64), stepTime: 0.2),
+          SpriteAnimationFrameData(srcPosition: Vector2(0,128), srcSize: Vector2(64,64), stepTime: 0.2),
+          SpriteAnimationFrameData(srcPosition: Vector2(64,128), srcSize: Vector2(64,64), stepTime: 0.2),
+          SpriteAnimationFrameData(srcPosition: Vector2(128,128), srcSize: Vector2(64,64), stepTime: 0.2),
+          SpriteAnimationFrameData(srcPosition: Vector2(192,128), srcSize: Vector2(64,64), stepTime: 0.2),
+          SpriteAnimationFrameData(srcPosition: Vector2(0,192), srcSize: Vector2(64,64), stepTime: 0.2),
+          SpriteAnimationFrameData(srcPosition: Vector2(64,192), srcSize: Vector2(64,64), stepTime: 0.2),
+          SpriteAnimationFrameData(srcPosition: Vector2(128,192), srcSize: Vector2(64,64), stepTime: 0.2),
+          SpriteAnimationFrameData(srcPosition: Vector2(192,192), srcSize: Vector2(64,64), stepTime: 0.2)
+          ];*/
     SpriteAnimationData data1 = SpriteAnimationData(frames1);
     aniCom1 = SpriteAnimationComponent.fromFrameData(spriteSize1,explode,data1,removeOnFinish: true);
+  //==================================
+
+    //if your sprite sheet is in sequence from left to right... you can use this data constructor... simple & fast
+    SpriteAnimationData data2 = SpriteAnimationData.sequenced(amount: 8, stepTime: 0.2, textureSize: Vector2(16,36) );
+    final aniCom2 = SpriteAnimationComponent.fromFrameData(spriteSize,spriteSheet,data2)
+      ..x = 100
+      ..y = 350;
+    add(aniCom2);
+
 
   }
 
@@ -139,7 +160,7 @@ class MyRealGame extends BaseGame{
   void update(double t) {
     super.update(t);
 
-    if(leftrightFly.shouldRemove){return;}
+    if(leftrightFly.shouldRemove){return;}//if this isnt there it might still run the below if block even after being removed!
     if(leftrightFly.checkOverlap(updownFly.position)){
       print('BANG ');
       PositionExplosion();
@@ -149,8 +170,9 @@ class MyRealGame extends BaseGame{
 
   }
 
+  //just a simple logic to decide where to draw the explosion animation
   void PositionExplosion() {
-    if(leftrightFly.direction=='left'){
+    if(leftrightFly.dir==Direction.left){
       if(leftrightFly.y > updownFly.y){
         aniCom1.x = updownFly.x ;
         aniCom1.y = updownFly.y ;
@@ -174,7 +196,7 @@ class MyRealGame extends BaseGame{
         print('444');
       }
     }
-    add(aniCom1);
+    add(aniCom1);//only after it has received an x&y cordinate.. add it to the game
   }
 
 
